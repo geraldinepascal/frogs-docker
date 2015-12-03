@@ -22,8 +22,8 @@ WORKDIR ${DEPS_LOC}
 env PATH $PATH:${DEPS_LOC}
 
 COPY bin/* ./
-ADD remove_chimera.py .
-ADD remove_chimera_tpl.html .
+ADD remove_chimera.py ./
+ADD remove_chimera_tpl.html ./
 
 ###############################################################
 
