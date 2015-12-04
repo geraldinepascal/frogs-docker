@@ -22,7 +22,7 @@ WORKDIR ${DEPS_LOC}
 env PATH $PATH:${DEPS_LOC}
 
 COPY bin/* ./
-ADD clustering.py .
+ADD clustering.py ./
 
 ###############################################################
 
