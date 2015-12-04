@@ -26,8 +26,8 @@ WORKDIR preprocess_dep
 env PATH $PATH:/root/preprocess_dep/
 
 COPY bin/* ./
-ADD preprocess.py .
-ADD preprocess_tpl.html .
+ADD preprocess.py ./
+ADD preprocess_tpl.html ./
 
 ###############################################################
 
