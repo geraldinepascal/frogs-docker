@@ -12,9 +12,8 @@ FROM debian:wheezy
 MAINTAINER Yvan Le Bras <yvan.le_bras@irisa.fr>
 
 # Set environment variable
-ENV TOOL_NAME affiliation_stat 
+ENV TOOL_NAME affiliations_stat 
 ENV TOOL_VERSION 1.1.0
-ENV TOOL_PKG ${TOOL_ID}_v${TOOL_VERSION}.zip
 
 ENV PACKAGES python2.7-minimal apt-utils
 
