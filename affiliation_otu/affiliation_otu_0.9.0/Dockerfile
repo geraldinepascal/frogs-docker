@@ -1,32 +1,60 @@
 ############################################################
-# Dockerfile to build FROGS affiliation_OTU deps
-# Based on debian wheezy with RDPTools
+# Dockerfile to build container images
+# Based on debian
+# Tool on FROGS applications 
+# https://github.com/geraldinepascal/FROGS
 ############################################################
 
-# Set the base image to debian wheezy with flash
-FROM cmonjeau/rdptools
 
-# Set noninterative mode
-ENV DEBIAN_FRONTEND noninteractive
-ENV PACKAGES perl util-linux ncbi-blast+
+# Set the base image to Ubuntu
+FROM debian:wheezy
 
-################## DEPENDENCIES INSTALLATION ######################
+# File Author / Maintainer
+MAINTAINER Sandrine Perrin <sandrine.perrin@france-bioinformatique.fr>
 
-RUN apt-get update -y
-RUN apt-get install -y ${PACKAGES}
+# Set environment variable
+ENV TOOL_NAME RDPTools
+ENV TOOL_ID rdptools
+ENV TOOL_VERSION 2.0.2
 
-################## AFFILIATION_OTU DEPENDENCIES ######################
+ENV PACKAGES \
+        ant \
+        git \
+        make \
+        ncbi-blast+=2.2.26-3 \
+        python=2.7.3-4+deb7u1 \
+        openjdk-7-jdk \
+        openjdk-7-jre-headless
 
-WORKDIR /root/affiliation_otu_deps
-ENV PATH $PATH:/root/affiliation_otu_deps/
+ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
 
+# Update the repository sources list
+RUN apt-get update
+
+# Install dependency
+RUN apt-get install --yes $PACKAGES
+
+# Download internal dependencies
+WORKDIR /tmp
+RUN git clone https://github.com/rdpstaff/RDPTools.git && \
+    cd ${TOOL_NAME}* && \
+    git checkout $TOOL_VERSION && \
+    git submodule update --init && \
+    make  && \
+    cp lib/*.jar /usr/local/bin/
+
+
+# Install AffiliationOTU 
 COPY bin/* /usr/local/bin/
 COPY affiliation_* /usr/local/bin/
+
+# Make script executable
 RUN chmod +x /usr/local/bin/*
 
+# Cleanup
+RUN apt-get clean
+RUN rm -r ${TOOL_NAME}*
+WORKDIR /
 
-RUN cp -r /opt/RDPTools/* ./
+# Set entrypoint
 
-###############################################################
-
-MAINTAINER Monjeaud Cyril <Cyril.Monjeaud@irisa.fr>
