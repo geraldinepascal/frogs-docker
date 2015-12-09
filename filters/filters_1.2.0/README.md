@@ -8,4 +8,4 @@ Filters OTUs on several criteria.
 
 ### Command example execution ###
 
-`docker run -it --rm -v <path_data>:/root -w /root  demultiplex:1.2.0 demultiplex.py --input-R1 test.fastq --input-barcode index.tsv`
+`docker run -it --rm -v <path_data>:/root -w /root filters.py --input-biom example.biom --input-fasta db.fasta -a`
