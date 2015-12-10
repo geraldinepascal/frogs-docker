@@ -41,8 +41,10 @@ RUN git clone https://github.com/rdpstaff/RDPTools.git && \
     git checkout $TOOL_VERSION && \
     git submodule update --init && \
     make  && \
-    cp lib/*.jar /usr/local/bin/
+    cp *.jar /usr/local/bin/
 
+# Copy dependencies for RDPTools
+RUN cp -r ${TOOL_NAME}*/lib /usr/local/bin/
 
 # Make script executable
 RUN chmod +x /usr/local/bin/*
