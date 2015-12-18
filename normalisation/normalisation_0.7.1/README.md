@@ -4,7 +4,7 @@ Abundance normalisation.
 
 ### Build the image ###
 
-`docker build -t normalisation:0.6.0 .`
+`docker build -t normalisation:0.7.1 .`
 
 ### Command example execution ###
 
