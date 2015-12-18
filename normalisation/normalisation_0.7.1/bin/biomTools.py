@@ -19,7 +19,7 @@
 __author__ = 'Frederic Escudie - Plateforme bioinformatique Toulouse'
 __copyright__ = 'Copyright (C) 2015 INRA'
 __license__ = 'GNU General Public License'
-__version__ = '0.7.2'
+__version__ = '0.9.2'
 __email__ = 'frogs@toulouse.inra.fr'
 __status__ = 'beta'
 
@@ -81,9 +81,7 @@ def update_tree_for_sample( biom, tree, sample_name, taxonomy_key, sample_id=Non
         current_node = tree
         if observation["metadata"].has_key(taxonomy_key) and observation["metadata"][taxonomy_key] is not None:
             # Get taxonomy
-            taxonomy = observation["metadata"][taxonomy_key]
-            if not isinstance(taxonomy, list) and not isinstance(taxonomy, tuple):
-                taxonomy = map( str.strip, taxonomy.split(";") )
+            taxonomy = biom.get_observation_taxonomy( observation["id"], taxonomy_key )
             # Add taxon in tree
             for taxon in taxonomy:
                 if not current_node.has_child( taxon ):
@@ -102,6 +100,8 @@ def update_tree_for_sample( biom, tree, sample_name, taxonomy_key, sample_id=Non
 #
 ####################################################################################################################
 def task_sampling( args ):
+    if args.nb_sampled is None and args.sampled_ratio is None:
+        raise Exception('--nb-sampled or --sampled-ratio must be provided.')
     sampling_by_sample( args.input_file, args.output_file, args.nb_sampled, args.sampled_ratio )
 
 
@@ -197,9 +197,7 @@ def rarefaction( input_biom, interval=10000, ranks=None, taxonomy_key="taxonomy"
             for current_selected in selected_observations:
                 taxonomy = list()
                 if current_selected['observation']["metadata"].has_key(taxonomy_key) and current_selected['observation']["metadata"][taxonomy_key] is not None:
-                    taxonomy = current_selected['observation']["metadata"][taxonomy_key]
-                    if not isinstance(taxonomy, list) and not isinstance(taxonomy, tuple):
-                        taxonomy = map( str.strip, taxonomy.split(";") )
+                    taxonomy = biom.get_observation_taxonomy( current_selected['observation']["id"], taxonomy_key )
                 for idx, taxon in enumerate(taxonomy):
                     if taxon.lower().startswith("unknown"):
                         taxonomy[idx] = "unknown"
@@ -415,6 +413,21 @@ def biom_to_tsv( input_biom, output_tsv, fields, list_separator ):
 
 ####################################################################################################################
 #
+# Argparse types
+#
+####################################################################################################################
+def strict_positive_int(value):
+    """
+    @summary: Raises an exception if the argument value is < 1.
+    """
+    value = int(value)
+    if value < 1:
+        raise argparse.ArgumentTypeError("The minimum value is 1.")
+    return value
+
+
+####################################################################################################################
+#
 # Main
 #
 ####################################################################################################################
@@ -424,7 +437,8 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers()
 
     # Sampling parameters
-    parser_sampling = subparsers.add_parser('sampling', help='Random sampling in each sample.')
+    parser_sampling = subparsers.add_parser('sampling', help='Random sampling in each sample.', usage='''biomTools.py sampling [-h] -i INPUT_FILE -o OUTPUT_FILE
+                             -n NB_SAMPLED | -r SAMPLED_RATIO''')
     parser_sampling.add_argument( '-i', '--input-file', required=True, type=str, help='BIOM file processed.' )
     parser_sampling.add_argument( '-o', '--output-file', required=True, type=str, help='Sampling results in BIOM format.' )
     group_exclusion_sampling = parser_sampling.add_mutually_exclusive_group()
@@ -436,7 +450,7 @@ if __name__ == "__main__":
     parser_rarefaction = subparsers.add_parser('rarefaction', help='Process data for rarefaction curve by sample.')
     parser_rarefaction.add_argument( '-i', '--input-file', required=True, type=str, help='BIOM file processed.' )
     parser_rarefaction.add_argument( '-o', '--output-file-pattern', required=True, type=str, help='Rarefaction file(s) pattern with tag "##RANK##". Example: "/tmp/rarefaction_##RANK##.tsv".' )
-    parser_rarefaction.add_argument( '-s', '--step-size', type=int, default=10000, help='Additional number of sampled sequences by round of sampling.' )
+    parser_rarefaction.add_argument( '-s', '--step-size', type=strict_positive_int, default=10000, help='Additional number of sampled sequences by round of sampling.' )
     parser_rarefaction.add_argument( '-r', '--ranks', nargs='+', required=True, type=int, default=None, help='The taxonomy depth used to evaluate diversity.' )
     parser_rarefaction.add_argument( '-k', '--taxonomy-key', type=str, default="taxonomy", help='The metadata title for the taxonomy in your BIOM file. Example : "rdp_taxonomy"' )
     parser_rarefaction.set_defaults(func=task_rarefaction)

@@ -19,7 +19,7 @@
 __author__ = 'Frederic Escudie - Plateforme bioinformatique Toulouse'
 __copyright__ = 'Copyright (C) 2015 INRA'
 __license__ = 'GNU General Public License'
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 __email__ = 'frogs@toulouse.inra.fr'
 __status__ = 'prod'
 
@@ -27,6 +27,7 @@ import os
 import time
 import argparse
 import subprocess
+from subprocess import Popen, PIPE
 from sequenceIO import *
 
 
@@ -94,6 +95,20 @@ class TmpFiles:
         for tmp_file in all_tmp_files:
             self.delete(tmp_file)
 
+def get_cutadapt_version():
+    """
+    @summary: Return the cutadapt version.
+    @return: [str] The cutadapt version.
+    """
+    version = None
+    try:
+        cmd = 'cutadapt --version'
+        p = Popen(cmd, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        version = stdout.strip()
+    except:
+        version = "unknown"
+    return version
 
 def rvc( sequence ):
     """
@@ -123,7 +138,7 @@ if __name__ == "__main__":
     parser.add_argument( '-e', '--error-rate', type=float, default=0.1, help="Maximum allowed error rate (no. of errors divided by the length of the matching region)." )
     parser.add_argument( '-n', '--non-overlap', type=int, default=1, help="Maximum allowed error rate (no. of errors divided by the length of the matching region)." )
     parser.add_argument( '-d', '--debug', default=False, action='store_true', help="Keep temporary files to debug program." )
-    parser.add_argument( '-v', '--version', action='version', version=__version__ )
+    parser.add_argument( '-v', '--version', action='version', version=__version__ + " [cutadapt " + get_cutadapt_version() + "]" )
     # Inputs
     group_input = parser.add_argument_group( 'Inputs' )
     group_input.add_argument( '-i', '--input', required=True, help='The amplicons sequences (format: FASTQ).' )
@@ -131,6 +146,8 @@ if __name__ == "__main__":
     group_output = parser.add_argument_group( 'Outputs' )
     group_output.add_argument( '-o', '--output', required=True, help='The trimmed sequences.')
     args = parser.parse_args()
+    if args.min_length < (len(args.five_prim_primer) + len(args.five_prim_primer)):
+        raise argparse.ArgumentTypeError( "The minimum length of the amplicon (--min-length) must be superior to the size of the two primers." )
 
     # Process
     tmpFiles = TmpFiles( os.path.split(args.output)[0] )
@@ -158,7 +175,7 @@ if __name__ == "__main__":
                                " --overlap " + str(len(args.five_prim_primer) - args.non_overlap) + 
                                " --untrimmed-output " + tmp_5prim_untrimmed + " --too-short-output " + tmp_5prim_too_short + " -o " + tmp_5prim_trimmed +
                                " " + args.input +
-                               " > " + tmp_5prim_log, shell=True)
+                               " > " + tmp_5prim_log, shell=True) # Try to remove 5prim primer with sequences supposed to be forward
         subprocess.check_call( "cutadapt -a " + args.three_prim_primer +
                                " --error-rate " + str(args.error_rate) +
                                " --overlap " + str(len(args.three_prim_primer) - args.non_overlap) +
@@ -166,7 +183,7 @@ if __name__ == "__main__":
                                " --match-read-wildcards" +
                                " -o " + tmp_3prim_trimmed +
                                " " + tmp_5prim_trimmed +
-                               " > " + tmp_3prim_log, shell=True )
+                               " > " + tmp_3prim_log, shell=True ) # For forward sequences (correctly trimmed by first cutadapt) remove 3prim primer
 
         # Collect supposed RVC reads (untrimmed and uncorrect trim)
         to_rvc = dict()

@@ -13,7 +13,7 @@ MAINTAINER Yvan Le Bras <yvan.le_bras@irisa.fr>
 
 # Set environment variable
 ENV TOOL_NAME normalisation 
-ENV TOOL_VERSION 0.6.0
+ENV TOOL_VERSION 0.7.1
 ENV TOOL_PKG ${TOOL_ID}_v${TOOL_VERSION}.zip
 
 ENV PACKAGES python2.7-minimal apt-utils

@@ -18,10 +18,11 @@
 __author__ = 'Frederic Escudie - Plateforme bioinformatique Toulouse'
 __copyright__ = 'Copyright (C) 2015 INRA'
 __license__ = 'GNU General Public License'
-__version__ = '0.8.0'
+__version__ = '0.9.0'
 __email__ = 'frogs@toulouse.inra.fr'
 __status__ = 'prod'
 
+import re
 import sys
 import time
 import json
@@ -891,6 +892,45 @@ class Biom:
             if current_observ["metadata"].has_key(metadata_title):
                 has_metadata = True
         return has_metadata
+
+    def get_observation_taxonomy( self, observation_name, taxonomy_key ):
+        """
+        @summary: Returns the taxonomic ranks for the observation.
+        @param observation_name: [str] The specified observation.
+        @param taxonomy_key: [str] The metadata key for the taxonomy.
+        @retrurn: [list] The list of taxonomic ranks.
+        @note: Unfortunately some BIOM have a non-canonical format for store the taxonomy metadata. This method manages the below formats.
+            - list or tuple:
+              ["d:Bacteria", "Proteobacteria", "Epsilonproteobacteria", "Campylobacterales", "Helicobacteraceae", "Helicobacter"]
+            - string:
+               "Bacteria;Proteobacteria;Epsilonproteobacteria;Campylobacterales;Helicobacteraceae;Helicobacter;"
+            - string ended by rank separator:
+               "Bacteria;Proteobacteria;Epsilonproteobacteria;Campylobacterales;Helicobacteraceae;Helicobacter"
+            - string with bootstrap:
+               "Bacteria(1.0000);Proteobacteria(0.9997);Epsilonproteobacteria(1.0000);Campylobacterales(1.0000);Helicobacteraceae(0.9898);Helicobacter(0.9912)"
+            - string with bootstrap and ended by rank separator:
+               "Bacteria(1.0000);Proteobacteria(0.9997);Epsilonproteobacteria(1.0000);Campylobacterales(1.0000);Helicobacteraceae(0.9898);Helicobacter(0.9912);"
+        """
+        observation_metadata = self.get_observation_metadata(observation_name)
+        if taxonomy_key not in observation_metadata or observation_metadata[taxonomy_key] is None:
+            raise ValueError("The observation '" + observation_name + "' does not have taxonomy.")
+        taxonomy = observation_metadata[taxonomy_key]
+        cleaned_taxonomy = list()
+        # Get taxonomy as a r/w list
+        if isinstance(taxonomy, list) or isinstance(taxonomy, tuple): # Copy the list
+            cleaned_taxonomy = [taxon.strip() for taxon in taxonomy]
+        else: # Convert taxonomy in list
+            cleaned_taxonomy = taxonomy
+            if cleaned_taxonomy.strip().endswith(";"):
+                cleaned_taxonomy = cleaned_taxonomy.strip()[:-1]
+            cleaned_taxonomy = [taxon.strip() for taxon in cleaned_taxonomy.split(";")]
+        # Remove bootstrap information if its exist
+        boostrap_regexp = re.compile("^(.+)\(\d+(\.\d+)?\)$")
+        if len(cleaned_taxonomy) != 0 and boostrap_regexp.match(cleaned_taxonomy[0]) is not None: # Taxonomy contains bootstrap values
+            for rank, taxon in enumerate(cleaned_taxonomy):
+                matches = boostrap_regexp.search(taxon)
+                cleaned_taxonomy[rank] = matches.group(1).strip()
+        return cleaned_taxonomy
 
     # Add by Maria
     def get_observations( self ):

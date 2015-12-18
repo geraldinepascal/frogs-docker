@@ -19,7 +19,7 @@
 __author__ = 'Frederic Escudie - Plateforme bioinformatique Toulouse'
 __copyright__ = 'Copyright (C) 2015 INRA'
 __license__ = 'GNU General Public License'
-__version__ = '0.5.1'
+__version__ = '0.6.0'
 __email__ = 'frogs@toulouse.inra.fr'
 __status__ = 'prod'
 
@@ -554,6 +554,21 @@ def main_process(args):
         if not args.debug:
             tmp_files.deleteAll()
 
+def get_vsearch_version():
+    """
+    @summary: Return the vserach version.
+    @return: [str] The vsearch version.
+    """
+    version = None
+    try:
+        cmd = ["vsearch", "--version"]
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = p.communicate()
+        version = stdout.split(",")[0].split()[1] # vsearch v1.1.3_linux_x86_64, 126.0GB RAM, 32 cores
+    except:
+        version = "unknown"
+    return version
+
 
 ##################################################################################################################################################
 #
@@ -569,7 +584,7 @@ if __name__ == "__main__":
     parser.add_argument( '-l', '--lenient-filter', default=False, action='store_true', help="Removes one sequence in all samples only if it is detected as chimera in all samples where it is present. Without this option the program removes one sequence in all samples if it is detected as chimera in at least one sample." )
     parser.add_argument( '-p', '--nb-cpus', type=int, default=1, help="The maximum number of CPUs used." )
     parser.add_argument( '--debug', default=False, action='store_true', help="Keep temporary files to debug program." )
-    parser.add_argument( '-v', '--version', action='version', version=__version__ )
+    parser.add_argument( '-v', '--version', action='version', version=__version__ + " [vsearch " + get_vsearch_version() + "]" )
     group_input = parser.add_argument_group( 'Inputs' ) # Inputs
     group_input.add_argument( '-s', '--sequences', required=True, help='The cluster sequences.' )
     group_exclusion_abundance = group_input.add_mutually_exclusive_group()
