@@ -4,8 +4,8 @@
 ############################################################
 
 # Set the base image to debian wheezy with vsearch
-FROM cmonjeau/vsearch:1.9.3
-
+#FROM cmonjeau/vsearch:1.9.3
+FROM docker-registry.genouest.org/cmonjeau/vsearch
 # Set noninterative mode
 ENV DEBIAN_FRONTEND noninteractive
 ENV PACKAGES python-pip perl
